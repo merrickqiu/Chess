@@ -105,6 +105,10 @@ public class ChessApplication extends Application {
                     boardPane.getChildren().remove(imageArray[row][column]);
                 }
                 imageArray[row][column] = currentlyHeld;
+                if (board.justPassanted) {
+                    boardPane.getChildren().remove(imageArray[startRow][column]);
+                    imageArray[startRow][column] = null;
+                }
                 if (board.justCastled) {
                     int oldCol, newCol;
                     if (column == 6) {

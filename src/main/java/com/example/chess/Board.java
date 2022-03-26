@@ -15,10 +15,12 @@ public class Board {
             {Piece.WhitePawn, Piece.WhitePawn,   Piece.WhitePawn,   Piece.WhitePawn,  Piece.WhitePawn, Piece.WhitePawn,   Piece.WhitePawn,   Piece.WhitePawn},
             {Piece.WhiteRook, Piece.WhiteKnight, Piece.WhiteBishop, Piece.WhiteQueen, Piece.WhiteKing, Piece.WhiteBishop, Piece.WhiteKnight, Piece.WhiteRook},
     };
+    Pair<Integer, Integer> passantablePawn = new Pair<>(-1, -1);
     boolean whiteTurn = true;
     // canCastle.get(color).get(kingSide);
     Map<Boolean, Map<Boolean, Boolean>> canCastle;
     public boolean justCastled = false;
+    public boolean justPassanted = false;
     public Board() {
         canCastle = new HashMap<>();
         Map<Boolean, Boolean> whiteCastle = new HashMap<>();
@@ -56,6 +58,7 @@ public class Board {
         if (isCastle(row1, col1, row2, col2)) {
             handleCastle(row1, col1, row2, col2);
             justCastled = true;
+            displayStatus();
             return true;
         } else {
             justCastled = false;
@@ -73,23 +76,54 @@ public class Board {
             canCastle.get(whiteTurn).put(false, false);
         }
 
+        if (isEnPassant(row1, col1, row2, col2)) {
+            moveAnywhere(row1, col1, row2, col2);
+            boardArray[row1][col2] = Piece.Empty;
+            passantablePawn = new Pair<>(-1, -1);
+            justPassanted = true;
+            displayStatus();
+            return true;
+        } else {
+            justPassanted = false;
+        }
+
 
         if (legalMove(row1, col1, row2, col2)) {
             moveAnywhere(row1, col1, row2, col2);
-            if (checkmate(whiteTurn)) {
-                System.out.println("CHECKMATED " + getColorString(whiteTurn));
+            if (boardArray[row2][col2] == Piece.WhitePawn || boardArray[row2][col2] == Piece.BlackPawn) {
+                passantablePawn = new Pair<>(row2, col2);
+            } else {
+                passantablePawn = new Pair<>(-1, -1);
             }
-            if (stalemate(whiteTurn)) {
-                System.out.println("STALEMATE!");
-            }
-            if (inCheck(whiteTurn)) {
-                System.out.println("CHECKED " + getColorString(whiteTurn));
-            }
+            displayStatus();
             return true;
         }
         return false;
     }
 
+    public void displayStatus() {
+        if (checkmate(whiteTurn)) {
+            System.out.println("CHECKMATED " + getColorString(whiteTurn));
+        }
+        if (stalemate(whiteTurn)) {
+            System.out.println("STALEMATE!");
+        }
+        if (inCheck(whiteTurn)) {
+            System.out.println("CHECKED " + getColorString(whiteTurn));
+        }
+    }
+
+    public boolean isEnPassant(int row1, int col1, int row2, int col2) {
+        int newRow = whiteTurn ? row1-1 : row1+1;
+
+        Piece pawn = whiteTurn ? Piece.WhitePawn : Piece.BlackPawn;
+        Piece enemyPawn = whiteTurn ? Piece.BlackPawn : Piece.WhitePawn;
+        return passantablePawn.getKey() == row1 &&
+                passantablePawn.getValue() == col2 &&
+                row2 == newRow && Math.abs(col2-col1) == 1 &&
+                boardArray[row1][col1] == pawn && boardArray[row2][col2] == Piece.Empty &&
+                boardArray[row1][col2] == enemyPawn;
+    }
     public boolean isCastle(int row1, int col1, int row2, int col2) {
         if (boardArray[row1][col1] == Piece.WhiteKing || boardArray[row1][col1] == Piece.BlackKing) {
             if (Math.abs(col2 - col1) == 2) {
